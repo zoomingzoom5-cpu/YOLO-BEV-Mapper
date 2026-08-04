@@ -17,13 +17,13 @@ from models_wrapper import TransmotionWrapper
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
-# Initialize the model wrapper
-# Note: Loading models can be slow, so we do it once at startup
-print("Loading models...")
+# モデルラッパーを初期化する
+# ※ モデルの読み込みには時間がかかるため、起動時に一度だけ実行する
+print("モデルを読み込み中...")
 try:
     model_wrapper = TransmotionWrapper()
 except Exception as e:
-    print(f"Error loading models: {e}")
+    print(f"モデル読み込みエラー: {e}")
     model_wrapper = None
 
 
@@ -67,7 +67,7 @@ async def root():
         return FileResponse(index_file)
 
     return {
-        "message": "Live2DSpaceView Backend is running",
+        "message": "Live2DSpaceView バックエンド稼働中",
         "debug": "/debug",
         "version": "debug-browser-view",
     }
@@ -129,10 +129,10 @@ async def debug_page(request: Request):
     </style>
   </head>
   <body>
-    <header>PC Debug Camera View</header>
+    <header>PC デバッグカメラ表示</header>
     <main>
       <img src="/debug/stream" alt="debug camera stream" />
-      <div class="hint">Waiting for frames from the main page...</div>
+      <div class="hint">メインページからのフレーム受信を待機中...</div>
     </main>
   </body>
 </html>
@@ -162,14 +162,14 @@ async def debug_stream(request: Request):
 @app.websocket("/ws/process")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("Client connected")
+    print("クライアント接続")
     
     try:
         while True:
-            # Receive image from client (as base64 string or binary)
+            # クライアントから画像を受信する（base64 文字列またはバイナリ）
             data = await websocket.receive_text()
             
-            # Decode base64 image
+            # base64 画像をデコードする
             try:
                 if "," not in data:
                     continue
@@ -195,7 +195,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if frame is None:
                     continue
                 
-                # Process frame
+                # フレームを処理する
                 if model_wrapper:
                     detections = model_wrapper.process_frame(frame)
                 else:
@@ -211,7 +211,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     for detection in detections
                 ]
                 
-                # Send results back
+                # 結果をクライアントに返送する
                 await websocket.send_json({
                     "status": "success",
                     "count": len(public_detections),
@@ -219,13 +219,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
                 
             except Exception as e:
-                print(f"Error processing frame: {e}")
+                print(f"フレーム処理エラー: {e}")
                 await websocket.send_json({"status": "error", "message": str(e)})
                 
     except WebSocketDisconnect:
-        print("Client disconnected")
+        print("クライアント切断")
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        print(f"WebSocket エラー: {e}")
 
 
 if FRONTEND_DIST.exists():
@@ -247,7 +247,7 @@ async def frontend_app(full_path: str):
         return FileResponse(index_file)
 
     return HTMLResponse(
-        "Frontend is not built. Run `npm run build` in the frontend directory.",
+        "フロントエンドが未ビルドです。frontend ディレクトリで `npm run build` を実行してください。",
         status_code=503,
     )
 

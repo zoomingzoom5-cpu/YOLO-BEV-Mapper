@@ -1,38 +1,21 @@
-## Monocular localization
+## 単眼カメラによる位置推定
 
-The backend now returns a 3D position for every detected person whenever YOLO can
-produce a bounding box. It follows the MonoLoco idea of using 2D pose evidence
-with camera geometry: the foot point is back-projected into camera coordinates,
-and depth is estimated from the apparent human height.
+バックエンドは、YOLO がバウンディングボックスを検出できたすべての人物に対して 3D 位置を返します。MonoLoco のアイデアに基づき、2D 姿勢データとカメラ幾何を組み合わせて処理します。具体的には、足元の点をカメラ座標に逆投影し、人物の見かけ上の高さから奥行きを推定します。
 
-Useful environment variables:
+### 環境変数
 
-- `CAMERA_FX`, `CAMERA_FY`, `CAMERA_CX`, `CAMERA_CY`: real camera intrinsics in
-  pixels. If omitted, a 60 degree horizontal FOV webcam default is used.
-- `HUMAN_HEIGHT_M`: assumed pedestrian height, default `1.70`.
-- `BEV_HOMOGRAPHY`: optional 3x3 image-to-ground-plane homography matrix. When
-  set, the backend uses this calibrated floor mapping instead of height-based
-  depth.
-- `YOLO_POSE_MODEL`: path to a YOLO pose model. Defaults to
-  `backend/yolov8n-pose.pt`.
-- `DEBUG_CAMERA_WINDOW`: show the PC-side native OpenCV debug window with the
-  camera frame, pose points, and boxes. Defaults to `0` because native OpenCV
-  windows often do not appear when the backend is launched as a hidden/background
-  process. Set `1` only when running the backend directly in an interactive
-  desktop session.
-- `DEBUG_BROWSER_WINDOW`: open the PC debug browser window at
-  `http://127.0.0.1:8000/debug` when the backend starts. Defaults to `1`; set
-  `0` to disable it. Use this view if OpenCV's native window does not appear
-  because of the way the backend was launched.
+- `CAMERA_FX`, `CAMERA_FY`, `CAMERA_CX`, `CAMERA_CY`: カメラの内部パラメータ（ピクセル単位）。省略時は水平画角 60° の Web カメラ向けデフォルト値を使用します。
+- `HUMAN_HEIGHT_M`: 想定する人物の身長。デフォルトは `1.70`（メートル）。
+- `BEV_HOMOGRAPHY`: 画像座標から床面座標への 3x3 ホモグラフィ行列（省略可）。設定すると、身長ベースの奥行き推定の代わりにキャリブレーション済みの床面マッピングを使用します。
+- `YOLO_POSE_MODEL`: YOLO pose モデルへのパス。デフォルトは `backend/yolov8n-pose.pt`。
+- `DEBUG_CAMERA_WINDOW`: OpenCV のネイティブデバッグウィンドウ（カメラフレーム・姿勢点・検出枠を表示）の表示を切り替えます。デフォルトは `0`（非表示）。バックエンドがバックグラウンドプロセスとして起動されている場合、ネイティブウィンドウは表示されないことが多いためです。対話的なデスクトップ環境で直接実行する場合にのみ `1` を設定してください。
+- `DEBUG_BROWSER_WINDOW`: バックエンド起動時に `http://127.0.0.1:8000/debug` のブラウザデバッグ画面を自動で開きます。デフォルトは `1`（有効）。`0` を設定すると無効になります。OpenCV のネイティブウィンドウが表示されない環境ではこちらをお使いください。
 
-For Android cameras, landscape is the recommended default for mapped spaces
-because it gives wider horizontal coverage and usually keeps multiple people in
-view. Portrait can work better in a narrow corridor or when the camera is close
-and full-body visibility is difficult. In either orientation, keep each person's
-head and feet visible; the foot point and apparent body height drive the
-geometry estimate.
+### Android カメラの向きについて
 
-Run locally:
+一般的な部屋サイズの空間をマッピングする場合は横向きがおすすめです。横向きの方が水平方向に広く撮影でき、複数人を同時にフレーム内に収めやすいためです。一方、縦向きは廊下のように細長い空間や、カメラと人物の距離が近く全身を映しにくい場合に有効です。どちらの向きでも、各人物の頭から足先まで映っているほど推定精度が向上します。足元の位置と体の見かけ上の高さが幾何推定の根拠となるためです。
+
+### ローカルで起動する
 
 ```bash
 python -m uvicorn main:app --host 127.0.0.1 --port 8000

@@ -12,12 +12,12 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class TransmotionWrapper:
-    """YOLO-pose based monocular pedestrian localization.
+    """YOLO-pose を用いた単眼カメラでの歩行者位置推定。
 
-    The bundled MonoTransmotion code needs trained checkpoints to produce metric
-    locations. This wrapper keeps the same API but uses the MonoLoco-style
-    geometry fallback: infer depth from the projected human height, then
-    back-project the foot point with camera intrinsics.
+    同梱の MonoTransmotion コードはメトリック位置を出力するのに学習済みチェック
+    ポイントが必要です。このラッパーは同じ API を維持しつつ、MonoLoco 方式の幾何
+    フォールバックを使用します。具体的には、投影された人物の高さから奥行きを推定
+    し、カメラ内部パラメータで足元の点を逆投影します。
     """
 
     def __init__(self, device=None):
@@ -49,14 +49,14 @@ class TransmotionWrapper:
         self.homography = _load_homography(os.getenv("BEV_HOMOGRAPHY"))
         self.position_history = defaultdict(lambda: deque(maxlen=self.history_len))
 
-        print("Using YOLO-pose monocular geometry localization")
+        print("YOLO-pose 単眼幾何推定モードで起動")
         print(
-            "Camera intrinsics:",
+            "カメラ内部パラメータ:",
             {
-                "fx": self.fx or "auto",
-                "fy": self.fy or "auto",
-                "cx": self.cx or "auto",
-                "cy": self.cy or "auto",
+                "fx": self.fx or "自動",
+                "fy": self.fy or "自動",
+                "cx": self.cx or "自動",
+                "cy": self.cy or "自動",
             },
         )
 
@@ -120,8 +120,8 @@ class TransmotionWrapper:
         return self.latest_debug_jpeg
 
     def _camera_params(self, width, height):
-        # A 60-degree horizontal FOV is a practical webcam default. Real CAMERA_FX/FY
-        # values improve metric accuracy without changing the API.
+        # 水平画角 60° は一般的な Web カメラ向けのデフォルト値。
+        # 実際の CAMERA_FX/FY を指定するとメトリック精度が向上する（API は変わらない）。
         auto_fx = width / (2.0 * math.tan(math.radians(60.0) / 2.0))
         auto_fy = auto_fx
         return (
@@ -202,7 +202,7 @@ class TransmotionWrapper:
                 cv2.destroyWindow(self.debug_window_name)
                 self.debug_window = False
         except cv2.error as exc:
-            print(f"OpenCV debug window disabled: {exc}")
+            print(f"OpenCV デバッグウィンドウ無効化: {exc}")
             self.debug_window = False
 
     def _update_debug_frame(self, frame, detections):
@@ -267,7 +267,7 @@ def _optional_float(name):
     try:
         return float(value)
     except ValueError:
-        print(f"Ignoring invalid {name}={value!r}")
+        print(f"無効な値を無視: {name}={value!r}")
         return None
 
 
@@ -277,10 +277,10 @@ def _load_homography(raw):
     try:
         matrix = np.array(literal_eval(raw), dtype=np.float32)
     except Exception as exc:
-        print(f"Ignoring invalid BEV_HOMOGRAPHY: {exc}")
+        print(f"無効な BEV_HOMOGRAPHY を無視: {exc}")
         return None
     if matrix.shape != (3, 3):
-        print("Ignoring BEV_HOMOGRAPHY because it is not a 3x3 matrix")
+        print("BEV_HOMOGRAPHY が 3x3 行列ではないため無視します")
         return None
     return matrix
 

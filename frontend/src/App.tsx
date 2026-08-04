@@ -39,7 +39,7 @@ function App() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('Connected to backend');
+      console.log('バックエンドに接続しました');
       setIsConnected(true);
     };
 
@@ -52,7 +52,7 @@ function App() {
     };
 
     ws.onclose = () => {
-      console.log('Disconnected from backend');
+      console.log('バックエンドから切断されました');
       setIsConnected(false);
     };
 
@@ -66,7 +66,7 @@ function App() {
       return;
     }
 
-    // Start Webcam
+    // Web カメラを起動する
     async function startWebcam() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -82,7 +82,7 @@ function App() {
           videoRef.current.srcObject = stream;
         }
       } catch (err) {
-        console.error('Error accessing webcam:', err);
+        console.error('Web カメラへのアクセスエラー:', err);
       }
     }
     startWebcam();
@@ -136,7 +136,7 @@ function App() {
       return;
     }
 
-    // Send frames to backend
+    // バックエンドにフレームを送信する
     const interval = setInterval(() => {
       if (wsRef.current && isConnected && videoRef.current && captureCanvasRef.current) {
         const video = videoRef.current;
@@ -144,24 +144,24 @@ function App() {
         const ctx = canvas.getContext('2d');
         
         if (ctx && video.readyState === 4 && video.videoWidth > 0) {
-          // Sync canvas size with video
+          // キャンバスのサイズを動画に同期する
           if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
           }
           
-          // Draw video to hidden canvas to get base64
+          // 動画を非表示キャンバスに描画して base64 を取得する
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const base64Image = canvas.toDataURL('image/jpeg', 0.5);
           wsRef.current.send(base64Image);
         }
       }
-    }, 100); // 10 FPS
+    }, 100); // 10 FPSで送信
 
     return () => clearInterval(interval);
   }, [demoMode, isConnected]);
 
-  // Draw Bird's Eye View
+  // 俯瞰マップ（Bird's Eye View）を描画する
   useEffect(() => {
     if (canvasBevRef.current) {
       const canvas = canvasBevRef.current;
@@ -170,7 +170,7 @@ function App() {
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw grid
+        // グリッドを描画する
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 1;
         for (let i = 0; i < canvas.width; i += 50) {
@@ -180,20 +180,20 @@ function App() {
           ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
         }
 
-        // Center point (representing the camera)
+        // 中心点（カメラ位置を表す）
         ctx.fillStyle = '#fff';
         ctx.beginPath(); ctx.arc(canvas.width / 2, canvas.height - 20, 5, 0, 2 * Math.PI); ctx.fill();
 
         detections.forEach(det => {
           if (det.pos3d) {
-            // Map 3D (X, Y, Z) to BEV (X, Z)
-            // Backend pos3d is [X, Y, Z] in meters
-            // We'll scale it to pixels. X is side, Z is depth.
-            const scale = 50; // 1 meter = 50 pixels
+            // 3D 座標 (X, Y, Z) を俯瞰マップ (X, Z) にマッピングする
+            // バックエンドの pos3d は [横方向X, 高さY, 奥行きZ]（メートル単位）
+            // X が左右、Z が奥行き方向。スケール値でピクセルに変換する。
+            const scale = 50; // 1メートル = 50ピクセル
             const bevX = canvas.width / 2 + det.pos3d[0] * scale;
             const bevZ = canvas.height - 20 - det.pos3d[2] * scale;
             
-            // Draw current position
+            // 現在位置を描画する
             ctx.fillStyle = '#00ff00';
             ctx.beginPath(); ctx.arc(bevX, bevZ, 8, 0, 2 * Math.PI); ctx.fill();
 
@@ -201,16 +201,14 @@ function App() {
             ctx.font = '12px monospace';
             ctx.fillText(`#${det.id}`, bevX + 10, bevZ - 10);
             
-            // Draw predicted trajectory
+            // 予測軌跡を描画する
             if (det.trajectory && det.trajectory.length > 0) {
               ctx.strokeStyle = '#00ffff';
               ctx.setLineDash([5, 5]);
               ctx.beginPath();
               ctx.moveTo(bevX, bevZ);
               det.trajectory.forEach(pt => {
-                // Assuming trajectory is also 3D or 2D XZ
-                // If it's image coords, we'd need another mapping. 
-                // Let's assume the wrapper provides world-space trajectory for now.
+                // 軌跡はワールド空間の XZ 座標として扱う
                 const tx = canvas.width / 2 + pt[0] * scale;
                 const tz = canvas.height - 20 - pt[1] * scale;
                 ctx.lineTo(tx, tz);
@@ -233,7 +231,7 @@ function App() {
             Debug View
           </button>
           <div className={`status ${isConnected ? 'online' : 'offline'}`}>
-            {demoMode ? 'Demo Mode' : isConnected ? 'Backend Online' : 'Connecting to Backend...'}
+            {demoMode ? 'デモモード' : isConnected ? 'バックエンド接続中' : 'バックエンドに接続中...'}
           </div>
         </div>
       </header>
@@ -244,17 +242,17 @@ function App() {
 
         <section className="summary-grid">
           <div className="metric-panel">
-            <span>Detected People</span>
+            <span>検出人数</span>
             <strong>{detectedCount}</strong>
           </div>
           <div className="metric-panel">
-            <span>Mapped People</span>
+            <span>マッピング済み</span>
             <strong>{detections.filter(det => det.pos3d).length}</strong>
           </div>
         </section>
 
         <section className="bev-panel">
-          <h3>Bird's Eye View</h3>
+          <h3>俯瞰マップ</h3>
           <div className="canvas-wrapper">
             <canvas ref={canvasBevRef} width={700} height={620} />
           </div>
@@ -262,12 +260,12 @@ function App() {
       </main>
 
       <div className="detections-info">
-        <h3>Live Detections</h3>
+        <h3>リアルタイム検出情報</h3>
         <ul>
           {detections.map(det => (
             <li key={det.id}>
               ID: {det.id} | 
-              3D Pos: {det.pos3d ? `${det.pos3d[0].toFixed(2)}, ${det.pos3d[1].toFixed(2)}, ${det.pos3d[2].toFixed(2)} m` : 'N/A'}
+              3D 位置: {det.pos3d ? `${det.pos3d[0].toFixed(2)}, ${det.pos3d[1].toFixed(2)}, ${det.pos3d[2].toFixed(2)} m` : 'なし'}
               {det.quality ? ` | ${det.quality}` : ''}
             </li>
           ))}

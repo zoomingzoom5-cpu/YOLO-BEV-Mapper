@@ -1,53 +1,53 @@
-# MonoTransmotion Web App - Setup Instructions
+# MonoTransmotion Web アプリ - セットアップ手順
 
-This application integrates the MonoTransmotion framework for real-time 3D human localization and trajectory prediction.
+MonoTransmotion フレームワークを統合し、リアルタイムで人物の 3D 位置推定と軌跡予測を行うアプリケーションです。
 
-## Prerequisites
-- Python 3.9+
-- Node.js & npm
-- Webcam (or a video stream source)
+## 前提条件
+- Python 3.9 以上
+- Node.js と npm
+- Web カメラ（または映像ストリームのソース）
 
-## Installation
+## インストール
 
-### 1. Backend Setup
+### 1. バックエンドのセットアップ
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-### 2. Checkpoints (CRITICAL)
-You must download the pre-trained checkpoints from the [MonoTransmotion Releases](https://github.com/vita-epfl/MonoTransmotion/releases) and place them in the following paths:
+### 2. チェックポイント（重要）
+[MonoTransmotion Releases](https://github.com/vita-epfl/MonoTransmotion/releases) から学習済みチェックポイントをダウンロードし、以下のパスに配置してください。
 - `models/MonoTransmotion/checkpoints/localization.pth`
 - `models/MonoTransmotion/checkpoints/traj_pred.pth`
 
-Then update the `configs/*.yaml` files in `models/MonoTransmotion/code/configs/` to point to these checkpoints:
+その後、`models/MonoTransmotion/code/configs/` 内の `configs/*.yaml` ファイルを編集し、チェックポイントへの絶対パスを指定します。
 ```yaml
 MODEL:
     checkpoint: "C:/absolute/path/to/localization.pth"
 ```
 
-### 3. Frontend Setup
+### 3. フロントエンドのセットアップ
 ```bash
 cd frontend
 npm install
 ```
 
-## Running the Application
+## アプリの起動
 
-### 1. Start the Backend
+### 1. バックエンドを起動する
 ```bash
 cd backend
 python main.py
 ```
-The backend will start at `http://localhost:8000`. It will download `yolov8n-pose.pt` on its first run.
+バックエンドは `http://localhost:8000` で起動します。初回起動時に `yolov8n-pose.pt` が自動ダウンロードされます。
 
-### 2. Start the Frontend
+### 2. フロントエンドを起動する
 ```bash
 cd frontend
 npm run dev
 ```
-Open your browser at `http://localhost:5173`.
+ブラウザで `http://localhost:5173` を開いてください。
 
-## Architecture Note
-- **Backend:** FastAPI handles WebSocket connections, runs YOLOv8-pose for 2D skeleton extraction, and pipes the results through MonoTransmotion's Localization and Trajectory models.
-- **Frontend:** React captures the webcam feed, sends frames to the backend, and visualizes the results on a 2D Bird's Eye View (BEV) canvas.
+## アーキテクチャの補足
+- **バックエンド:** FastAPI が WebSocket 接続を処理し、YOLOv8-pose で 2D スケルトンを抽出したうえで、MonoTransmotion の位置推定モデルと軌跡予測モデルに結果を渡します。
+- **フロントエンド:** React が Web カメラの映像をキャプチャし、フレームをバックエンドに送信して、結果を 2D 俯瞰マップ（BEV）キャンバスに描画します。
